@@ -4,7 +4,7 @@ const puppeteer = require('puppeteer');
 
 // Express setup
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Puppeteer browser and page objects
 let browser;
