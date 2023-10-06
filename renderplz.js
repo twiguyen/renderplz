@@ -14,7 +14,12 @@ let page;
 async function startBrowser() {
     browser = await puppeteer.launch({
         headless: true, // Use non-headless mode for visibility during testing
-        defaultViewport: null // Use default browser window size
+        defaultViewport: null,
+        args: [
+            '--disable-web-security', // Disable web security (for CORS issues)
+            '--enable-javascript',     // Enable JavaScript
+            '--enable-features=NetworkService', // Enable network service (recommended)
+        ],
     });
     page = await browser.newPage();
     // Set a standard User-Agent to avoid potential blocking by websites
