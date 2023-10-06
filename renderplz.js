@@ -16,7 +16,6 @@ async function startBrowser() {
         headless: true, // Use non-headless mode for visibility during testing
         defaultViewport: null,
         args: [
-            '--disable-web-security', // Disable web security (for CORS issues)
             '--enable-javascript',     // Enable JavaScript
             '--enable-features=NetworkService', // Enable network service (recommended)
         ],
