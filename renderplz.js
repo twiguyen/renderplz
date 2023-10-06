@@ -13,7 +13,7 @@ let page;
 // Initializes Puppeteer and opens a new browser page
 async function startBrowser() {
     browser = await puppeteer.launch({
-        headless: false,
+        // headless: false,
         defaultViewport: null
     });
     page = await browser.newPage();
