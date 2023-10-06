@@ -13,7 +13,7 @@ let page;
 // Initializes Puppeteer and opens a new browser page
 async function startBrowser() {
     browser = await puppeteer.launch({
-        headless: true, // Use non-headless mode for visibility during testing
+        headless: false, // Use non-headless mode for visibility during testing
         defaultViewport: null
     });
     page = await browser.newPage();
@@ -33,18 +33,10 @@ app.get('/', async (req, res) => {
     }
 
     const enableJavaScript = req.query.CF === 'TRUE';
-
     try {
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
-        if (enableJavaScript) {
-            // Enable JavaScript and other args if CF=TRUE
-            await page.setJavaScriptEnabled(true);
-            await page.setBypassCSP(true);
-            await page.setExtraHTTPHeaders({
-                'Accept-Language': 'en-US,en;q=0.9',
-            });
-        }
+    
     
         if (hrms === 'TRUE') {
             // Attempt to click on the "View All Jobs" button
