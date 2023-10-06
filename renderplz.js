@@ -14,11 +14,7 @@ let page;
 async function startBrowser() {
     browser = await puppeteer.launch({
         headless: true, // Use non-headless mode for visibility during testing
-        defaultViewport: null,
-        args: [
-            '--enable-javascript',     // Enable JavaScript
-            '--enable-features=NetworkService', // Enable network service (recommended)
-        ],
+        defaultViewport: null
     });
     page = await browser.newPage();
     // Set a standard User-Agent to avoid potential blocking by websites
@@ -36,8 +32,19 @@ app.get('/', async (req, res) => {
         return res.status(400).send("URL parameter is required.");
     }
 
+    const enableJavaScript = req.query.CF === 'TRUE';
+
     try {
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+
+        if (enableJavaScript) {
+            // Enable JavaScript and other args if CF=TRUE
+            await page.setJavaScriptEnabled(true);
+            await page.setBypassCSP(true);
+            await page.setExtraHTTPHeaders({
+                'Accept-Language': 'en-US,en;q=0.9',
+            });
+        }
     
         if (hrms === 'TRUE') {
             // Attempt to click on the "View All Jobs" button
