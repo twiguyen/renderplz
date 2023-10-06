@@ -9,5 +9,5 @@
   "scripts": {
     "start": "node renderplz.js" // Replace with the appropriate script to run your application
   },
-  "author": "Twiggy",
+  "author": "Twiggy"
 }
