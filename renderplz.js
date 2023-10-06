@@ -27,6 +27,7 @@ startBrowser();
 app.get('/', async (req, res) => {
     const url = req.query.url;
     const hrms = req.query.HRMS;
+    const vip = req.query.VIP;
 
     if (!url) {
         return res.status(400).send("URL parameter is required.");
@@ -77,6 +78,17 @@ app.get('/', async (req, res) => {
                 previousHeight = currentHeight;
                 await page.waitForTimeout(2000);
             }
+        }
+
+        if (vip === 'TRUE') {
+            // Wait for the text "Loading site" to disappear within a div with class "processing"
+            await page.waitForFunction(() => {
+                const processingDiv = document.querySelector('.processing');
+                if (processingDiv) {
+                    return !processingDiv.textContent.includes('Loading site');
+                }
+                return true;
+            });
         }
     
         const content = await page.content();
