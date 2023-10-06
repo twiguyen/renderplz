@@ -13,7 +13,7 @@ let page;
 // Initializes Puppeteer and opens a new browser page
 async function startBrowser() {
     browser = await puppeteer.launch({
-        //headless: false,  Use non-headless mode for visibility during testing
+        // headless: false,
         defaultViewport: null
     });
     page = await browser.newPage();
@@ -28,6 +28,7 @@ app.get('/', async (req, res) => {
     const url = req.query.url;
     const hrms = req.query.HRMS;
     const vip = req.query.VIP;
+    const rona = req.query.RONA;
 
     if (!url) {
         return res.status(400).send("URL parameter is required.");
@@ -37,7 +38,20 @@ app.get('/', async (req, res) => {
     try {
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
-    
+        if (rona === 'TRUE') {
+            const clicked = await page.evaluate(() => {
+                const element = document.querySelector('li[data-value="250"]');
+                if (element) {
+                    element.click();
+                    return true;
+                }
+                return false;
+            });
+
+            if (clicked) {
+                await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 });
+            }
+        }
     
         if (hrms === 'TRUE') {
             // Attempt to click on the "View All Jobs" button
