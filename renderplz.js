@@ -13,7 +13,7 @@ let page;
 // Initializes Puppeteer and opens a new browser page
 async function startBrowser() {
     browser = await puppeteer.launch({
-        // headless: false,
+        headless: false,
         defaultViewport: null
     });
     page = await browser.newPage();
@@ -38,21 +38,39 @@ app.get('/', async (req, res) => {
     try {
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
+        let finalContent = ''; // This will store the final combined content
         if (rona === 'TRUE') {
-            const clicked = await page.evaluate(() => {
-                const element = document.querySelector('li[data-value="250"]');
-                if (element) {
-                    element.click();
-                    return true;
-                }
-                return false;
-            });
+            // Click on the specific div based on its attributes
+            const divElement = await page.$('div[role="combobox"][aria-haspopup="listbox"][id="mui-7"]');
+            if (divElement) {
+                await divElement.click();
+                await page.waitForTimeout(1000); // Wait for dropdown to appear
 
-            if (clicked) {
-                await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 });
+                // Click on the li with data-value="250"
+                const listItemElement = await page.$('li[data-value="250"]');
+                if (listItemElement) {
+                    await listItemElement.click();
+                    await page.waitForTimeout(1000); // Give it some time if necessary
+                    
+                    // Capture content after the li is clicked
+                    const contentAfterLiClick = await page.content();
+                    finalContent += contentAfterLiClick;
+
+                    // Click on the svg with data-testid="KeyboardArrowRightIcon"
+                    const svgElement = await page.$('svg[data-testid="KeyboardArrowRightIcon"]');
+                    if (svgElement) {
+                        await svgElement.click();
+
+                        // Capture content of the next page
+                        const contentAfterSvgClick = await page.content();
+                        finalContent += "\n\n-------- Next Page --------\n\n" + contentAfterSvgClick;
+                    }
+                    res.setHeader('Content-Type', 'text/plain');
+                    return res.send(finalContent);
+                }
             }
         }
-    
+        
         if (hrms === 'TRUE') {
             // Attempt to click on the "View All Jobs" button
             const clicked = await page.evaluate(() => {
