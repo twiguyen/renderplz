@@ -1,0 +1,13 @@
+{
+  "name": "Render-Plz",
+  "version": "1.0.0",
+  "description": "A tool to help render webpages that use javascript and returns the output source",
+  "main": "renderplz.js", 
+  "dependencies": {
+    "puppeteer": "^20.9.0"
+  },
+  "scripts": {
+    "start": "node renderplz.js" // Replace with the appropriate script to run your application
+  },
+  "author": "Twiggy",
+}
