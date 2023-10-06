@@ -15,6 +15,7 @@ async function startBrowser() {
     browser = await puppeteer.launch({
         headless: true, // Use non-headless mode for visibility during testing
         defaultViewport: null,
+        executablePath: '/path/to/chrome/executable',
     });
     page = await browser.newPage();
     // Set a standard User-Agent to avoid potential blocking by websites
