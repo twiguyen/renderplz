@@ -13,7 +13,7 @@ let page;
 // Initializes Puppeteer and opens a new browser page
 async function startBrowser() {
     browser = await puppeteer.launch({
-        // headless: false,
+        //headless: false,
         defaultViewport: null
     });
     page = await browser.newPage();
@@ -29,7 +29,7 @@ app.get('/', async (req, res) => {
     const hrms = req.query.HRMS;
     const vip = req.query.VIP;
     const rona = req.query.RONA;
-    const hydro = req.query.HYDRO;
+
 
     if (!url) {
         return res.status(400).send("URL parameter is required.");
@@ -72,14 +72,7 @@ app.get('/', async (req, res) => {
             }
         }
 
-        if (hydro === 'TRUE') {
-            // Click on the specific div based on its id
-            const hydroElement = await page.$('div[id="WDA3"][role="button"]');
-            if (hydroElement) {
-                await hydroElement.click();
-                await page.waitForTimeout(1000); // Wait for any potential page changes or modals
-            }
-        }
+     
         
         if (hrms === 'TRUE') {
             // Attempt to click on the "View All Jobs" button
