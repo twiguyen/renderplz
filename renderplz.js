@@ -52,7 +52,6 @@ app.get('/', async (req, res) => {
         await startBrowser(true);
     }
 
-
     const hrms = req.query.HRMS;
     const vip = req.query.VIP;
     const rona = req.query.RONA;
@@ -62,28 +61,27 @@ app.get('/', async (req, res) => {
         return res.status(400).send("URL parameter is required.");
     }
 
-    const enableJavaScript = req.query.CF === 'TRUE';
-
     try {
 
 
-        await page.goto(url, { waitUntil: 'load', timeout: 60000 });
+        await page.goto(url, { waitUntil: ['load', 'networkidle0'], timeout: 60000 });
 
 
-        let finalContent = ''; 
+
+        let finalContent = '';
 
         if (rona === 'TRUE') {
 
             const divElement = await page.$('div[role="combobox"][aria-haspopup="listbox"][id="mui-7"]');
             if (divElement) {
                 await divElement.click();
-                await page.waitForTimeout(1000); 
+                await page.waitForTimeout(1000);
 
 
                 const listItemElement = await page.$('li[data-value="250"]');
                 if (listItemElement) {
                     await listItemElement.click();
-                    await page.waitForTimeout(1000); 
+                    await page.waitForTimeout(1000);
 
 
                     const contentAfterLiClick = await page.content();
@@ -149,7 +147,7 @@ app.get('/', async (req, res) => {
                 await page.waitForTimeout(2000);
             }
 
-          
+
         }
 
         if (vip === 'TRUE') {
@@ -160,7 +158,7 @@ app.get('/', async (req, res) => {
                     return !processingDiv.textContent.includes('Loading site');
                 }
                 return true;
-            });
+            }); a
         }
 
         const content = await page.content();
