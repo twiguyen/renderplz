@@ -10,13 +10,32 @@ const PORT = process.env.PORT || 3000;
 let browser;
 let page;
 
-// Initializes Puppeteer and opens a new browser page
-async function startBrowser() {
+
+/*async function startBrowser() {
     browser = await puppeteer.launch({
-        //headless: false,
-        defaultViewport: null
+        headless: false,
+        defaultViewport: null,
+        args: ['--disable-web-security']
     });
     page = await browser.newPage();
+
+    // Set a standard User-Agent to avoid potential blocking by websites
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36');
+}*/
+
+async function startBrowser(disableWebSecurity = false) {
+    const launchOptions = {
+        //headless: false,
+        defaultViewport: null
+    };
+
+    if (disableWebSecurity) {
+        launchOptions.args = ['--disable-web-security'];
+    }
+
+    browser = await puppeteer.launch(launchOptions);
+    page = await browser.newPage();
+
     // Set a standard User-Agent to avoid potential blocking by websites
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36');
 }
@@ -26,56 +45,72 @@ startBrowser();
 
 app.get('/', async (req, res) => {
     const url = req.query.url;
+    const disableWebSecurity = req.query.DISABLE_WS;
+
+    if (disableWebSecurity) {
+        if (browser) await browser.close();
+        await startBrowser(true);
+    }
+
+
     const hrms = req.query.HRMS;
     const vip = req.query.VIP;
     const rona = req.query.RONA;
-
+    const displayID = req.query.DISPLAY_ID;
 
     if (!url) {
         return res.status(400).send("URL parameter is required.");
     }
 
     const enableJavaScript = req.query.CF === 'TRUE';
-    try {
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
-        let finalContent = ''; // This will store the final combined content
+    try {
+
+
+        await page.goto(url, { waitUntil: 'load', timeout: 60000 });
+
+
+        let finalContent = ''; 
+
         if (rona === 'TRUE') {
-            // Click on the specific div based on its attributes
+
             const divElement = await page.$('div[role="combobox"][aria-haspopup="listbox"][id="mui-7"]');
             if (divElement) {
                 await divElement.click();
-                await page.waitForTimeout(1000); // Wait for dropdown to appear
+                await page.waitForTimeout(1000); 
 
-                // Click on the li with data-value="250"
+
                 const listItemElement = await page.$('li[data-value="250"]');
                 if (listItemElement) {
                     await listItemElement.click();
-                    await page.waitForTimeout(1000); // Give it some time if necessary
-                    
-                    // Capture content after the li is clicked
+                    await page.waitForTimeout(1000); 
+
+
                     const contentAfterLiClick = await page.content();
                     finalContent += contentAfterLiClick;
 
-                    // Click on the svg with data-testid="KeyboardArrowRightIcon"
+
                     const svgElement = await page.$('svg[data-testid="KeyboardArrowRightIcon"]');
                     if (svgElement) {
                         await svgElement.click();
 
-                        // Capture content of the next page
+
                         const contentAfterSvgClick = await page.content();
                         finalContent += "\n\n-------- Next Page --------\n\n" + contentAfterSvgClick;
                     }
+
                     res.setHeader('Content-Type', 'text/plain');
                     return res.send(finalContent);
+
                 }
             }
         }
 
-     
-        
+
+
         if (hrms === 'TRUE') {
-            // Attempt to click on the "View All Jobs" button
+
+
             const clicked = await page.evaluate(() => {
                 const elements = document.querySelectorAll('span.ps-text');
                 for (let element of elements) {
@@ -86,7 +121,7 @@ app.get('/', async (req, res) => {
                 }
                 return false;
             });
-    
+
             if (clicked) {
                 await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 });
             }
@@ -101,7 +136,7 @@ app.get('/', async (req, res) => {
                     return scrollable.scrollHeight;
                 });
 
-                if (currentHeight === previousHeight) break; 
+                if (currentHeight === previousHeight) break;
                 // Scroll to load more content
                 await page.evaluate(() => {
                     const scrollable = document.getElementById('win0divHRS_AGNT_RSLT_I$grid$0');
@@ -109,10 +144,12 @@ app.get('/', async (req, res) => {
                         scrollable.scrollTop = scrollable.scrollHeight;
                     }
                 });
-            
+
                 previousHeight = currentHeight;
                 await page.waitForTimeout(2000);
             }
+
+          
         }
 
         if (vip === 'TRUE') {
@@ -125,11 +162,11 @@ app.get('/', async (req, res) => {
                 return true;
             });
         }
-    
+
         const content = await page.content();
         res.setHeader('Content-Type', 'text/plain');
         res.send(content);
-    
+
     } catch (error) {
         console.error(error);
         res.status(500).send("Failed to render content");
