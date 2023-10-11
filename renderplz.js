@@ -33,6 +33,7 @@ async function startBrowser(disableWebSecurity = false) {
 }
 
 // Trigger browser initialization
+console.log(puppeteer.executablePath());
 startBrowser();
 
 app.get('/', async (req, res) => {
