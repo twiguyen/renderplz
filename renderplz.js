@@ -12,7 +12,7 @@ let page;
 
 async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
-        headless: "new",
+        //headless: false,
         defaultViewport: null,
     };
 
