@@ -12,8 +12,9 @@ let page;
 
 async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
-        //headless: false,
+        headless: "new",
         defaultViewport: null,
+        executablePath: puppeteer.executablePath()
     };
 
     if (disableWebSecurity) {
