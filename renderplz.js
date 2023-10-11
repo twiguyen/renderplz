@@ -14,7 +14,6 @@ async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
         //headless: false,
         defaultViewport: null,
-        userDataDir: '/opt/render/project/src/.cache/puppeteer'
     };
 
     if (disableWebSecurity) {
