@@ -14,6 +14,7 @@ async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
         //headless: false,
         defaultViewport: null,
+        executablePath: '/opt/render/project/src/.cache/puppeteer/chrome/linux-117.0.5938149/chrome'
     };
 
     if (disableWebSecurity) {
