@@ -2,12 +2,14 @@
   "name": "render-plz",
   "version": "1.0.0",
   "description": "renders Javascript pages for webscrapers",
-  "main": "renderplz.js", 
+  "main": "renderplz.js",
   "scripts": {
     "start": "node renderplz.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "puppeteer": ""
+    "puppeteer": "",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }

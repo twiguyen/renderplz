@@ -1,7 +1,9 @@
 // Required modules
 const express = require('express');
-const puppeteer = require('puppeteer');
-
+//const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
 // Express setup
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,19 +11,6 @@ const PORT = process.env.PORT || 3000;
 // Puppeteer browser and page objects
 let browser;
 let page;
-
-
-/*async function startBrowser() {
-    browser = await puppeteer.launch({
-        headless: false,
-        defaultViewport: null,
-        args: ['--disable-web-security']
-    });
-    page = await browser.newPage();
-
-    // Set a standard User-Agent to avoid potential blocking by websites
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36');
-}*/
 
 async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
@@ -34,10 +23,15 @@ async function startBrowser(disableWebSecurity = false) {
     }
 
     browser = await puppeteer.launch(launchOptions);
+
+
     page = await browser.newPage();
 
     // Set a standard User-Agent to avoid potential blocking by websites
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36');
+    await page.setExtraHTTPHeaders({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+
+    });
 }
 
 // Trigger browser initialization
@@ -61,10 +55,11 @@ app.get('/', async (req, res) => {
         return res.status(400).send("URL parameter is required.");
     }
 
+
     try {
 
 
-        await page.goto(url, { waitUntil: ['load', 'networkidle0'], timeout: 60000 });
+        await page.goto(url, { waitUntil: ['load', 'networkidle0'], timeout: 120000 });
 
 
 
@@ -158,15 +153,43 @@ app.get('/', async (req, res) => {
                     return !processingDiv.textContent.includes('Loading site');
                 }
                 return true;
-            }); a
+            });
+
+            const iframeElements = await page.$$('iframe[id$="_20"]');
+            if (iframeElements.length > 1) {
+                const iframeSrc = await page.evaluate(iframe => iframe.src, iframeElements[1]);
+                const iframePage = await browser.newPage();
+                
+                // Set a standard user agent (optional, but might help)
+                await iframePage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36');
+                
+                await iframePage.goto(iframeSrc, { waitUntil: ['load', 'networkidle0'], timeout: 120000 });
+                
+                // Now, instead of simply capturing the content immediately,
+                // let's wait for a bit to ensure all dynamic content is loaded.
+                await iframePage.waitForTimeout(5000);  // wait for 5 seconds (you can adjust this)
+                
+                const iframeContent = await iframePage.content();
+                await iframePage.close();
+    
+                // Append the iframe content to the final content
+                finalContent += "\n\n-------- Iframe Content --------\n\n" + iframeContent;
+            } else {
+                console.error('Unable to locate the desired iframe.');
+                // Handle this case as needed
+            }
+
+
         }
+
 
         const content = await page.content();
         res.setHeader('Content-Type', 'text/plain');
-        res.send(content);
+        res.send(content + finalContent);  // include the finalContent which might contain iframe content
+
 
     } catch (error) {
-        console.error(error);
+        console.error('Error processing the request:', error.message);
         res.status(500).send("Failed to render content");
     }
 });
