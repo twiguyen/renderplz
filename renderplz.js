@@ -14,7 +14,6 @@ async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
         headless: "new",
         defaultViewport: null,
-        executablePath: puppeteer.executablePath()
     };
 
     if (disableWebSecurity) {
@@ -34,6 +33,7 @@ async function startBrowser(disableWebSecurity = false) {
 }
 
 // Trigger browser initialization
+console.log(puppeteer.executablePath());
 startBrowser();
 
 app.get('/', async (req, res) => {
