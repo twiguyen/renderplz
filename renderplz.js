@@ -1,4 +1,3 @@
-// Required modules
 const express = require('express');
 const puppeteer = require('puppeteer');
 
@@ -6,17 +5,17 @@ const puppeteer = require('puppeteer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Puppeteer browser and page objects
-//let browser;
-//let page;
+
+// function: start a new browser session
 
 async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
-        headless: false,
+        // for visual testing
+        //headless: false,
         defaultViewport: null,
-        //executablePath: '/opt/render/project/src/.cache/puppeteer/chrome/linux-117.0.5938149/chrome'
     };
 
+    // set disableWebSecurity to TRUE only when scraper is blocked
     if (disableWebSecurity) {
         launchOptions.args = ['--disable-web-security'];
     }
@@ -24,7 +23,7 @@ async function startBrowser(disableWebSecurity = false) {
     const localBrowser = await puppeteer.launch(launchOptions);
     const localPage = await localBrowser.newPage();
 
-    // Set a standard User-Agent to avoid potential blocking by websites
+    // standard User-Agent set
     await localPage.setExtraHTTPHeaders({
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
 
@@ -41,14 +40,12 @@ app.get('/', async (req, res) => {
 
     const { browser, page } = await startBrowser(disableWebSecurity);
 
-    /*if (disableWebSecurity) {
-        if (browser) await browser.close();
-        await startBrowser(true);
-    }*/
-
+    // URL flags for specific ATS
     const hrms = req.query.HRMS;
     const vip = req.query.VIP;
     const rona = req.query.RONA;
+
+    // URL flags for specific functions
     const displayID = req.query.DISPLAY_ID;
 
     if (!url) {
@@ -57,16 +54,15 @@ app.get('/', async (req, res) => {
 
 
     try {
-
-
-        await page.goto(url, { waitUntil: ['load', 'networkidle0'], timeout: 120000 });
-
-
+        await page.goto(url, { waitUntil: ['load', 'networkidle0'], timeout: 60000 });
 
         let finalContent = '';
 
+        // Specifically for employer RONA
+        // ** May need to adjust this function when it has less then 250 jobs or doesn't have dropbox
         if (rona === 'TRUE') {
 
+            // click dropbox to display 250 results per page
             const divElement = await page.$('div[role="combobox"][aria-haspopup="listbox"][id="mui-7"]');
             if (divElement) {
                 await divElement.click();
@@ -82,7 +78,7 @@ app.get('/', async (req, res) => {
                     const contentAfterLiClick = await page.content();
                     finalContent += contentAfterLiClick;
 
-
+                    // click next page and add on content
                     const svgElement = await page.$('svg[data-testid="KeyboardArrowRightIcon"]');
                     if (svgElement) {
                         await svgElement.click();
@@ -100,7 +96,8 @@ app.get('/', async (req, res) => {
         }
 
 
-
+        // HRMS ATS
+        // ** This only works for one style of HRMS, may need to adjust
         if (hrms === 'TRUE') {
 
 
@@ -122,6 +119,7 @@ app.get('/', async (req, res) => {
             await page.waitForTimeout(3000);
 
             let previousHeight = 0;
+
             // Loop to scroll through lazy-loaded content
             while (true) {
                 const currentHeight = await page.evaluate(() => {
@@ -130,7 +128,7 @@ app.get('/', async (req, res) => {
                 });
 
                 if (currentHeight === previousHeight) break;
-                // Scroll to load more content
+                // Scroll until no more content loads
                 await page.evaluate(() => {
                     const scrollable = document.getElementById('win0divHRS_AGNT_RSLT_I$grid$0');
                     if (scrollable) {
@@ -145,6 +143,7 @@ app.get('/', async (req, res) => {
 
         }
 
+        // VIP ATS
         if (vip === 'TRUE') {
             // Wait for the text "Loading site" to disappear within a div with class "processing"
             await page.waitForFunction(() => {
@@ -155,19 +154,18 @@ app.get('/', async (req, res) => {
                 return true;
             });
 
+            // actual index appears in second iframe
             const iframeElements = await page.$$('iframe[id$="_20"]');
             if (iframeElements.length > 1) {
                 const iframeSrc = await page.evaluate(iframe => iframe.src, iframeElements[1]);
                 const iframePage = await browser.newPage();
                 
-                // Set a standard user agent (optional, but might help)
+                // Set a standard user agent (iframe uses post request)
                 await iframePage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36');
                 
                 await iframePage.goto(iframeSrc, { waitUntil: ['load', 'networkidle0'], timeout: 120000 });
                 
-                // Now, instead of simply capturing the content immediately,
-                // let's wait for a bit to ensure all dynamic content is loaded.
-                await iframePage.waitForTimeout(5000);  // wait for 5 seconds (you can adjust this)
+                await iframePage.waitForTimeout(5000);  
                 
                 const iframeContent = await iframePage.content();
                 await iframePage.close();
@@ -176,12 +174,10 @@ app.get('/', async (req, res) => {
                 finalContent += "\n\n-------- Iframe Content --------\n\n" + iframeContent;
             } else {
                 console.error('Unable to locate the desired iframe.');
-                // Handle this case as needed
             }
 
 
         }
-
 
         const content = await page.content();
         res.setHeader('Content-Type', 'text/plain');
