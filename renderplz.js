@@ -7,44 +7,44 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Puppeteer browser and page objects
-let browser;
-let page;
+//let browser;
+//let page;
 
 async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
         headless: false,
         defaultViewport: null,
-        executablePath: '/opt/render/project/src/.cache/puppeteer/chrome/linux-117.0.5938149/chrome'
+        //executablePath: '/opt/render/project/src/.cache/puppeteer/chrome/linux-117.0.5938149/chrome'
     };
 
     if (disableWebSecurity) {
         launchOptions.args = ['--disable-web-security'];
     }
 
-    browser = await puppeteer.launch(launchOptions);
-
-
-    page = await browser.newPage();
+    const localBrowser = await puppeteer.launch(launchOptions);
+    const localPage = await localBrowser.newPage();
 
     // Set a standard User-Agent to avoid potential blocking by websites
-    await page.setExtraHTTPHeaders({
+    await localPage.setExtraHTTPHeaders({
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
 
     });
+    return { browser: localBrowser, page: localPage };
 }
 
-// Trigger browser initialization
-console.log(puppeteer.executablePath());
-startBrowser();
+// Trigger browser initialization for testing
+//startBrowser();
 
 app.get('/', async (req, res) => {
     const url = req.query.url;
     const disableWebSecurity = req.query.DISABLE_WS;
 
-    if (disableWebSecurity) {
+    const { browser, page } = await startBrowser(disableWebSecurity);
+
+    /*if (disableWebSecurity) {
         if (browser) await browser.close();
         await startBrowser(true);
-    }
+    }*/
 
     const hrms = req.query.HRMS;
     const vip = req.query.VIP;
