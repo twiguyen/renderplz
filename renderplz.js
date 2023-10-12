@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 
 async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
-        headless: false,
+        headless: true,
         defaultViewport: null,
         //executablePath: '/opt/render/project/src/.cache/puppeteer/chrome/linux-117.0.5938149/chrome'
     };
