@@ -1,6 +1,8 @@
 const express = require('express');
 const puppeteer = require('puppeteer');
 
+
+
 // Express setup
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
         // for visual testing
-        //headless: false,
+        // headless: false,
         defaultViewport: null,
     };
 
@@ -25,7 +27,7 @@ async function startBrowser(disableWebSecurity = false) {
 
     // standard User-Agent set
     await localPage.setExtraHTTPHeaders({
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0',
 
     });
     return { browser: localBrowser, page: localPage };
@@ -37,7 +39,6 @@ async function startBrowser(disableWebSecurity = false) {
 app.get('/', async (req, res) => {
     const url = req.query.url;
     const disableWebSecurity = req.query.DISABLE_WS;
-
     const { browser, page } = await startBrowser(disableWebSecurity);
 
     // URL flags for specific ATS
@@ -185,8 +186,15 @@ app.get('/', async (req, res) => {
 
 
     } catch (error) {
-        console.error('Error processing the request:', error.message);
-        res.status(500).send("Failed to render content");
+        if (error instanceof puppeteer.errors.TimeoutError) {
+            console.error('Puppeteer Timeout Error with URL:', url, '\nError Message:', error.message);
+            res.status(500).send(`Timeout error while processing URL: ${url}`);
+        } else {
+            console.error('Error processing the URL:', url, '\nError Message:', error.message);
+            res.status(500).send(`Failed to render content for URL: ${url}`);
+        }
+    } finally {
+        await browser.close();
     }
 });
 
