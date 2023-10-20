@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
         // for visual testing
-        // headless: false,
+        //headless: false,
         defaultViewport: null,
     };
 
@@ -33,6 +33,30 @@ async function startBrowser(disableWebSecurity = false) {
     return { browser: localBrowser, page: localPage };
 }
 
+// function (helper): scroll to the bottom of the page with lazy loading
+async function scrollLazyLoadedContent(page) {
+    let previousHeight = 0;
+
+    // Loop to scroll through lazy-loaded content
+    while (true) {
+        const currentHeight = await page.evaluate(() => {
+            return document.body.scrollHeight;
+        });
+
+        if (currentHeight === previousHeight) break;
+
+        // Scroll to the bottom of the page
+        await page.evaluate(() => {
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        previousHeight = currentHeight;
+        await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+}
+
+
+
 // Trigger browser initialization for testing
 //startBrowser();
 
@@ -48,6 +72,11 @@ app.get('/', async (req, res) => {
 
     // URL flags for specific functions
     const displayID = req.query.DISPLAY_ID;
+    const initialClickSelector = req.query.INITIALCLICK;
+    const scrollToBottom = req.query.SCROLL === 'BOTTOM';
+    const acceptAllCookies = req.query.COOKIE === 'ALL';
+
+
 
     if (!url) {
         return res.status(400).send("URL parameter is required.");
@@ -56,6 +85,27 @@ app.get('/', async (req, res) => {
 
     try {
         await page.goto(url, { waitUntil: ['load', 'networkidle0'], timeout: 60000 });
+
+        // Click "ACCEPT ALL" if cookie is requried / popup overlay is blocking page
+        if (acceptAllCookies) {
+            try {
+                await page.waitForSelector("#btnCookieAcceptALL", { timeout: 5000 });
+                await page.click("#btnCookieAcceptALL");
+            } catch (err) {
+                console.warn("Cookie acceptance button not found or failed to click.");
+            }
+        }
+
+        // perform click on selector and wait if INITIALCLICK is present
+        if (initialClickSelector) {
+
+            await page.evaluate((selector) => {
+                const element = document.querySelector(selector);
+                if (element) element.click();
+            }, initialClickSelector);
+
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
 
         let finalContent = '';
 
@@ -67,13 +117,13 @@ app.get('/', async (req, res) => {
             const divElement = await page.$('div[role="combobox"][aria-haspopup="listbox"][id="mui-7"]');
             if (divElement) {
                 await divElement.click();
-                await page.waitForTimeout(1000);
+                await new Promise(resolve => setTimeout(resolve, 1000));
 
 
                 const listItemElement = await page.$('li[data-value="250"]');
                 if (listItemElement) {
                     await listItemElement.click();
-                    await page.waitForTimeout(1000);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
 
 
                     const contentAfterLiClick = await page.content();
@@ -117,7 +167,7 @@ app.get('/', async (req, res) => {
                 await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 });
             }
 
-            await page.waitForTimeout(3000);
+            await new Promise(resolve => setTimeout(resolve, 3000));
 
             let previousHeight = 0;
 
@@ -138,7 +188,7 @@ app.get('/', async (req, res) => {
                 });
 
                 previousHeight = currentHeight;
-                await page.waitForTimeout(2000);
+                await new Promise(resolve => setTimeout(resolve, 2000));
             }
 
 
@@ -160,17 +210,17 @@ app.get('/', async (req, res) => {
             if (iframeElements.length > 1) {
                 const iframeSrc = await page.evaluate(iframe => iframe.src, iframeElements[1]);
                 const iframePage = await browser.newPage();
-                
+
                 // Set a standard user agent (iframe uses post request)
                 await iframePage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36');
-                
+
                 await iframePage.goto(iframeSrc, { waitUntil: ['load', 'networkidle0'], timeout: 120000 });
-                
-                await iframePage.waitForTimeout(5000);  
-                
+
+                await new Promise(resolve => setTimeout(resolve, 5000));
+
                 const iframeContent = await iframePage.content();
                 await iframePage.close();
-    
+
                 // Append the iframe content to the final content
                 finalContent += "\n\n-------- Iframe Content --------\n\n" + iframeContent;
             } else {
@@ -178,6 +228,10 @@ app.get('/', async (req, res) => {
             }
 
 
+        }
+
+        if (scrollToBottom) {
+            await scrollLazyLoadedContent(page);
         }
 
         const content = await page.content();
