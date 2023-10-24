@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
         // for visual testing
-        headless: false,
+        //headless: false,
         defaultViewport: null,
     };
 
@@ -244,10 +244,9 @@ app.get('/', async (req, res) => {
             finalContent = finalContent.replace(/<script/g, "<noscript");
             finalContent = finalContent.replace(/<\/script/g, "</noscript");
             content = content.replace(/<script/g, "<noscript");
-            console.log("4");
             content = content.replace(/<\/script/g, "</noscript");
-            console.log("5");
         }
+
         
         res.send(content + finalContent);  // include the finalContent which might contain iframe content
 
