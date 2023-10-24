@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 async function startBrowser(disableWebSecurity = false) {
     const launchOptions = {
         // for visual testing
-        //headless: false,
+        headless: false,
         defaultViewport: null,
     };
 
@@ -75,6 +75,8 @@ app.get('/', async (req, res) => {
     const initialClickSelector = req.query.INITIALCLICK;
     const scrollToBottom = req.query.SCROLL === 'BOTTOM';
     const acceptAllCookies = req.query.COOKIE === 'ALL';
+    const noScriptFlag = req.query.NOSCRIPT;
+
 
 
 
@@ -234,8 +236,19 @@ app.get('/', async (req, res) => {
             await scrollLazyLoadedContent(page);
         }
 
-        const content = await page.content();
+        let content = await page.content();
         res.setHeader('Content-Type', 'text/plain');
+
+        // replace all script elements with noscript so that it can appear on harvester testing
+        if (noScriptFlag === 'TRUE') {
+            finalContent = finalContent.replace(/<script/g, "<noscript");
+            finalContent = finalContent.replace(/<\/script/g, "</noscript");
+            content = content.replace(/<script/g, "<noscript");
+            console.log("4");
+            content = content.replace(/<\/script/g, "</noscript");
+            console.log("5");
+        }
+        
         res.send(content + finalContent);  // include the finalContent which might contain iframe content
 
 
