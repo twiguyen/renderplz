@@ -10,16 +10,22 @@ const PORT = process.env.PORT || 3000;
 
 // function: start a new browser session
 
-async function startBrowser(disableWebSecurity = false) {
+async function startBrowser(disableWebSecurity = false, disableHttp2 = false) {
     const launchOptions = {
         // for visual testing
-        //headless: false,
+        headless: false,
         defaultViewport: null,
+        args: []
     };
+
+    // set disableHttp2 to TRUE only when there is protocol issues
+    if (disableHttp2) {
+        launchOptions.args.push('--disable-http2');
+    }
 
     // set disableWebSecurity to TRUE only when scraper is blocked
     if (disableWebSecurity) {
-        launchOptions.args = ['--disable-web-security'];
+        launchOptions.args.push('--disable-web-security');
     }
 
     const localBrowser = await puppeteer.launch(launchOptions);
@@ -63,7 +69,8 @@ async function scrollLazyLoadedContent(page) {
 app.get('/', async (req, res) => {
     const url = req.query.url;
     const disableWebSecurity = req.query.DISABLE_WS;
-    const { browser, page } = await startBrowser(disableWebSecurity);
+    const disableHttp2 = req.query.DISABLE_HTTP2 === 'TRUE';
+    const { browser, page } = await startBrowser(disableWebSecurity, disableHttp2 === 'TRUE');
 
     // URL flags for specific ATS
     const hrms = req.query.HRMS;
