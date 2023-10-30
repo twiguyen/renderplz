@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 async function startBrowser(disableWebSecurity = false, disableHttp2 = false) {
     const launchOptions = {
         // for visual testing
-        headless: false,
+        //headless: false,
         defaultViewport: null,
         args: []
     };
