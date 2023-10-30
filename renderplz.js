@@ -12,33 +12,33 @@ const PORT = process.env.PORT || 3000;
 
 async function startBrowser(disableWebSecurity = false, disableHttp2 = false) {
 
-    console.log("test 1")
+
     const launchOptions = {
         // for visual testing
         //headless: false,
         defaultViewport: null,
         args: []
     };
-    console.log("test 2")
+
     // set disableHttp2 to TRUE only when there is protocol issues
     if (disableHttp2) {
         launchOptions.args.push('--disable-http2');
     }
-    console.log("test 3")
+
     // set disableWebSecurity to TRUE only when scraper is blocked
     if (disableWebSecurity) {
         launchOptions.args.push('--disable-web-security');
     }
-    console.log("test 4")
+
     const localBrowser = await puppeteer.launch(launchOptions);
     const localPage = await localBrowser.newPage();
-    console.log("test 5")
+
     // standard User-Agent set
     await localPage.setExtraHTTPHeaders({
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0',
 
     });
-    console.log("test 6")
+
     return { browser: localBrowser, page: localPage };
 }
 
@@ -75,7 +75,7 @@ app.get('/', async (req, res) => {
     const disableHttp2 = req.query.DISABLE_HTTP2 === 'TRUE';
     const { browser, page } = await startBrowser(disableWebSecurity, disableHttp2 === 'TRUE');
 
-    console.log("test 7")
+
     // URL flags for specific ATS
     const hrms = req.query.HRMS;
     const vip = req.query.VIP;
@@ -88,13 +88,13 @@ app.get('/', async (req, res) => {
     const acceptAllCookies = req.query.COOKIE === 'ALL';
     const noScriptFlag = req.query.NOSCRIPT;
 
-
+    console.log("test 1")
 
 
     if (!url) {
         return res.status(400).send("URL parameter is required.");
     }
-
+    console.log("test 2")
 
     try {
         await page.goto(url, { waitUntil: ['load', 'networkidle0'], timeout: 60000 });
@@ -249,7 +249,7 @@ app.get('/', async (req, res) => {
 
         let content = await page.content();
         res.setHeader('Content-Type', 'text/plain');
-
+        console.log("test 3")
         // replace all script elements with noscript so that it can appear on harvester testing
         if (noScriptFlag === 'TRUE') {
             finalContent = finalContent.replace(/<script/g, "<noscript");
